@@ -8,7 +8,25 @@ const Tour = require('./../models/tourModel');
 
 exports.getAllTours = async (req, res) => {
   try {
-    const allTours = await Tour.find();
+    console.log('before modifiction', req.query);
+    //BUILD QUERY
+    //1) FILTERING
+    const queryObj = { ...req.query };
+    const excludeFields = ['page', 'sort', 'limit', 'fields'];
+    excludeFields.forEach((el) => delete queryObj[el]);
+
+    //2)ADVANCED FILTERING
+
+    const operators = ['gt', 'gte', 'lt', 'lte'];
+    let queryString = JSON.stringify(queryObj);
+    queryString = queryString.replace(
+      /\b(gte|gt|lte|lt)\b/g,
+      (match) => `$${match}`
+    );
+
+    const query = Tour.find(JSON.parse(queryString));
+    //EXECUTE QUERY
+    const allTours = await query;
 
     res.status(200).json({
       status: 'success',
@@ -37,7 +55,7 @@ exports.createTour = async (req, res) => {
   } catch (err) {
     res.status(400).json({
       status: 'fail',
-      message: 'Invalid Data Sent',
+      message: err,
     });
   }
 };
