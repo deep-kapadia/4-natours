@@ -10,12 +10,12 @@ exports.getAllTours = async (req, res) => {
   try {
     console.log('before modifiction', req.query);
     //BUILD QUERY
-    //1) FILTERING
+    //1A) FILTERING
     const queryObj = { ...req.query };
     const excludeFields = ['page', 'sort', 'limit', 'fields'];
     excludeFields.forEach((el) => delete queryObj[el]);
 
-    //2)ADVANCED FILTERING
+    //1B)ADVANCED FILTERING
 
     const operators = ['gt', 'gte', 'lt', 'lte'];
     let queryString = JSON.stringify(queryObj);
@@ -24,7 +24,22 @@ exports.getAllTours = async (req, res) => {
       (match) => `$${match}`
     );
 
-    const query = Tour.find(JSON.parse(queryString));
+    let query = Tour.find(JSON.parse(queryString));
+    //2)SORTING
+    if (req.query.sort) {
+      const sortBy = req.query.sort.split(',').join(' ');
+      console.log(sortBy);
+      query = query.sort(sortBy);
+    } else {
+      query = query.sort('-createdAt');
+    }
+    if (req.query.fields) {
+      const fields = req.query.fields.split(',').join(' ');
+      query = query.select(fields);
+    } else {
+      query = query.select('-__v');
+    }
+
     //EXECUTE QUERY
     const allTours = await query;
 
